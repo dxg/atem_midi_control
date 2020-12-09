@@ -1,0 +1,24 @@
+{
+  "name": "atem_midi_control",
+  "version": "0.1.0",
+  "description": "Control Blacmagic ATEM switcher with cheap MIDI controllers",
+  "main": "src/index.js",
+  "dependencies": {
+    "atem-connection": "^2.1.0",
+    "chalk": "^4.1.0",
+    "lodash": "^4.17.20",
+    "midi": "^1.0.0",
+    "xml2json": "^0.12.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "atem",
+    "ty-1500hd",
+    "1500hd",
+    "atem",
+    "blackmagic",
+    "midi"
+  ],
+  "author": "Arek W",
+  "license": "ISC"
+}
