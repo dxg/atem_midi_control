@@ -1,35 +1,47 @@
 const _              = require('lodash');
 const atemConnection = require('atem-connection');
+const chalk          = require('chalk');
 
 class Atem {
+  #ip
+  #externalCallbacks
+  #device
+  #connected
+
   constructor(ip, externalCallbacks = {}) {
-    this.ip = ip;
-    this.externalCallbacks = _.defaults(externalCallbacks, {
-      onPgmPvwChange: (() => {}),
+    this.#ip = ip;
+    this.#externalCallbacks = _.defaults(externalCallbacks, {
+      onPgmPvwChange:  (() => {}),
+      onFTBChange: (() => {}),
     });
-    this.device = new atemConnection.Atem();
-    this._connected = new Promise((resolve, reject) => {
-      this.device.on('connected', () => {
-        console.log("connected", this.device.state.info.productIdentifier);
+    this.#device = new atemConnection.Atem();
+    this.#connected = new Promise((resolve, reject) => {
+      this.#device.on('connected', () => {
         resolve();
       });
     });
     
-    this.device.on('info', (a, b) => {
-      console.log("info", a, b);
+    this.#device.on('info', (what) => {
+      if (what !== 'reconnect') {
+        console.log("ATEM info", what);
+      }
     });
-    this.device.on('error', (a, b) => {
-      console.error("error", a, b);
+    this.#device.on('error', (what) => {
+      console.error(chalk.red(`ATEM error: ${what}`));
     });
     
-    this.device.on('stateChanged', (state, pathToChange) => {
-      const pgm =  _.find(this.device.state.inputs, (v, k) => v.shortName === 'PGM');
-      const pvw =  _.find(this.device.state.inputs, (v, k) => v.shortName === 'PVW');
-
+    this.#device.on('stateChanged', (state, pathToChange, val) => {
+      const pgm =  _.find(this.#device.state.inputs, (v, k) => v.shortName === 'PGM');
+      const pvw =  _.find(this.#device.state.inputs, (v, k) => v.shortName === 'PVW');
+      
       if (pathToChange[1].indexOf('previewInput') !== -1) {
-        this.externalCallbacks.onPgmPvwChange('PVW', this.device.listVisibleInputs('preview'));
+        this.#externalCallbacks.onPgmPvwChange('PVW', this.#device.listVisibleInputs('preview'));
       } else if (pathToChange[1].indexOf('programInput') !== -1) {
-        this.externalCallbacks.onPgmPvwChange('PGM', this.device.listVisibleInputs('program'));
+        this.#externalCallbacks.onPgmPvwChange('PGM', this.#device.listVisibleInputs('program'));
+      } else if (pathToChange[1].indexOf('fadeToBlack') !== -1) {
+        this.#externalCallbacks.onFTBChange(this.#device.state.video.mixEffects[0].fadeToBlack);
+      } else if (pathToChange[1].indexOf('transitionPosition') !== -1) {
+        // supress logs
       } else {
         console.log("stateChanged", pathToChange);
       }
@@ -37,20 +49,24 @@ class Atem {
   }
 
   async connect() {
-    await this.device.connect(this.ip);
-    await this._connected;
-    console.log("Connected", this.device.state.info);
+    await this.#device.connect(this.#ip);
+    await this.#connected;
+    console.log(chalk.green(`Connected to ${this.#device.state.info.productIdentifier}`));
   }
 
   disconnect() {
-    return this.device.disconnect();
+    return this.#device.disconnect();
   }
 
   getPgmPvwState() {
     return {
-      'PVW': this.device.listVisibleInputs('preview'),
-      'PGM': this.device.listVisibleInputs('program'),
+      'PVW': this.#device.listVisibleInputs('preview'),
+      'PGM': this.#device.listVisibleInputs('program'),
     };
+  }
+
+  getFTBState() {
+    return this.#device.state.video.mixEffects[0].fadeToBlack;
   }
 
   async changeInput(type, input) {
@@ -63,14 +79,25 @@ class Atem {
       console.error("Unknown input type:", type);
     }
 
-    console.log("changing", action, "input to", input);
+    // console.log(` ${type} -> ${input}`);
     
-    return this.device[action](input);
+    return this.#device[action](input);
   }
 
-  async setFaderPosition(pos) {
+  setFaderPosition(pos) {
     // 0 -> 10,000
-    return this.device.setTransitionPosition(pos);
+    return this.#device.setTransitionPosition(pos);
+  }
+
+  transition(type) {
+    switch (type) {
+      case 'cut':
+        return this.#device.cut();
+      case 'auto':
+        return this.#device.autoTransition(0);
+      case 'ftb':
+        return this.#device.fadeToBlack();
+    }
   }
 
 }

@@ -1,35 +1,77 @@
-const _    = require('lodash');
-const midi = require('midi');
+const _     = require('lodash');
+const chalk = require('chalk');
+const midi  = require('midi');
 
 class MIDIControlPanel {
   #config
+  #connected
   #externalCallbacks
   #groupedButtons
   #input
   #output
+
+  #aliveInterval
   
   constructor(model, externalCallbacks) {
     this.#config = require(`./config/${model}.json`);
     this.#groupedButtons = _.groupBy(this.#config.buttons, 'group');
+    this.#connected = false;
 
+    this.#externalCallbacks = _.defaults(externalCallbacks, {
+      onButtonPress: (() => {}),
+      onFader:       (() => {}),
+      onReconnect:   (() => {}),
+    });
+
+    this.#connect();
+    this.#aliveInterval = setInterval((() => this.#checkDeviceConnected()), 330);
+  }
+  
+  #connect() {
     this.#input  = new midi.Input();
     this.#output = new midi.Output();
-    this.#externalCallbacks = _.defaults(externalCallbacks, {
-      onControllerButtonPress: (() => {}),
-      onFader:                 (() => {}),
-    });
 
     this.#openPort(this.#input);
     this.#openPort(this.#output);
+    this.#connected = true;
+
+    console.log(chalk.green(`Connected to '${this.#config.name}' (midi)`));
 
     this.#config.buttons.forEach((btn) => this.#buttonLight(btn, false));
-
     this.#listen();
   }
 
-  close() {
-    this.input.closePort();
-    this.output.closePort();
+  #disconnect() {
+    this.#connected = false;
+    this.#stopListening();
+    this.#input.closePort();
+    this.#output.closePort();
+  }
+
+  #runWithStartupDelay(fn) {
+    // Wait until device has finished startup
+    setTimeout(
+      fn,
+      this.#config.startupTimeMS,
+    )
+  }
+
+  #checkDeviceConnected() {
+    const inFound  = this.#findPortIndex(this.#input,  this.#config.name) !== -1;
+    const outFound = this.#findPortIndex(this.#output, this.#config.name) !== -1;
+
+    if (inFound && outFound) {
+      if (!this.#connected) {
+        console.log(chalk.yellow(`Reconnecting to '${this.#config.name}'`));
+        this.#connect();
+        this.#runWithStartupDelay(this.#externalCallbacks.onReconnect);
+      }
+    } else {
+      if (this.#connected) {
+        console.log(chalk.yellow(`Connection to '${this.#config.name}' lost`));
+        this.#disconnect();
+      }
+    }
   }
 
   #findPortIndex(io, name) {
@@ -40,21 +82,23 @@ class MIDIControlPanel {
         return a;
       }
     }
-    return null;
+    return -1;
   }
 
   #openPort(io) {
     const index = this.#findPortIndex(io, this.#config.name);
 
-    if (index == null) {
-      throw new Error(`MIDI device '${this.#config.name}' not found`);
+    if (index === -1) {
+      const err = new Error(`MIDI device '${this.#config.name}' not found`);
+      err.code = 'midi-device-not-found';
+      throw err;
     }
 
     io.openPort(index);
   }
 
   #send(msg) {
-    this.#output.sendMessage(msg);
+    const ret = this.#output.sendMessage(msg);
   }
 
   #buttonLight(btn, on) {
@@ -66,19 +110,50 @@ class MIDIControlPanel {
     btn.on = on;
   }
 
+  #buttonLightFlash(btn, flash) {
+    if (flash && btn.flashing) {
+      return;
+    }
+    if (!flash && !btn.flashing) {
+      return;
+    }
+    
+    if (!flash && btn.flashing) {
+      clearInterval(btn.flashInterval);
+      btn.flashInterval = null;
+      btn.flashing = false;
+      this.#buttonLight(btn, false);
+      return;
+    }
+
+    btn.flashing = true;
+    btn.flashInterval = setInterval(
+      (() => this.#buttonLight(btn, !btn.on) ),
+      300,
+    );
+  }
+
   #turnonButtonInGroup(btn) {
-    if (btn.exclusive) {
+    if (btn.light === 'exclusive') {
       _.without(_.filter(this.#config.buttons, { group: btn.group, on: true }), btn).forEach((btn) => this.#buttonLight(btn, false));
     }
-    this.#buttonLight(btn, true);
+    if (['exclusive', 'temp'].includes(btn.light)) {
+      this.#buttonLight(btn, true);
+    }
+    if (btn.light === 'temp') {
+      setTimeout(
+        (() => this.#buttonLight(btn, false)),
+        500,
+      );
+    }
   }
 
   #onPress(btn) {
-    if (!btn.on || !btn.exclusive) {
+    if (!btn.on || btn.light !== 'exclusive') {
       this.#turnonButtonInGroup(btn);
     }
 
-    this.#externalCallbacks.onControllerButtonPress(btn.group, btn.name);
+    this.#externalCallbacks.onButtonPress(btn.group, btn.name);
   }
 
   #onFader(btn, val) {
@@ -115,35 +190,12 @@ class MIDIControlPanel {
         }
       }
 
-      console.log(msg);
+      // console.log("msg:", msg);
     });
   }
 
-  #bounce(buttons, groupName) {
-    let direction = 'right';
-    let index = 0;
-
-    const iterate = () => {
-      this.#onPress(buttons[index]);
-
-      if (direction === 'right') {
-        if (index === (buttons.length - 1)) {
-          direction = 'left';
-          index--;
-        } else {
-          index++;
-        }
-      } else {
-        if (index === 0) {
-          direction = 'right';
-          index++;
-        } else {
-          index--;
-        }
-      }
-    };
-
-    setInterval(iterate, 150);
+  #stopListening() {
+    this.#input.removeAllListeners();
   }
 
   turnonButtonInGroup(type, index) {
@@ -151,14 +203,22 @@ class MIDIControlPanel {
     this.#turnonButtonInGroup(btn);
   }
 
-  // Just for fun
-  bounceAll() {
-    const groups = _.groupBy(this.#config.buttons, (b) => b.group.slice(0,3));
+  fadeToBlackLight(state) {
+    const btn = this.#config.buttons.find((b) => b.name === 'ftb');
 
-    _.values(groups).forEach((buttons, index) => {
-      //console.log(buttons[0].group, buttons.length, index);
-      setTimeout((() => this.#bounce(buttons, buttons[0].group)), index * 150);
-    });
+    switch (state) {
+      case 'off':
+        this.#buttonLightFlash(btn, false);
+        this.#buttonLight(btn, false);
+        break;
+      case 'on':
+        this.#buttonLightFlash(btn, false);
+        this.#buttonLight(btn, true);
+        break;
+      case 'flashing':
+        this.#buttonLightFlash(btn, true);
+        break;
+    }
   }
 }
 

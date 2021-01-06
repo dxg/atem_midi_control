@@ -15,6 +15,30 @@ const main = async () => {
       panel.turnonButtonInGroup(type, index);
     }
   };
+
+  const onAtemFTBChange = (ftbState) => {
+    let lightState = 'off';
+    
+    if (ftbState.inTransition) {
+      lightState = 'on';
+    } else if (ftbState.isFullyBlack) {
+      lightState = 'flashing';
+    }
+
+    panel.fadeToBlackLight(lightState);
+  }
+
+  const syncState = () => {
+    _.each(atem.getPgmPvwState(), (data, type) => {
+      onAtemPgmPvwChange(type, data);
+    });
+    onAtemFTBChange(atem.getFTBState());
+  };
+
+  const onControllerReconnect = () => {
+    console.log("onControllerConnect");
+    syncState();
+  };
   
   const onControllerButtonPress = async (group, name) => {
     switch (group) {
@@ -27,30 +51,34 @@ const main = async () => {
             await atem.changeInput(group, btnId);
           }
         }
+        break;
+      case 'transition':
+        await atem.transition(name);
+        break;
     }
   };
 
-  const onFader = async (name, value) => {
+  const onControllerFader = async (name, value) => {
     switch (name) {
       case 'transition':
-        console.log("onFader", name, value);
         await atem.setFaderPosition(value);
+        break;
     }
   };
 
-  const syncState = () => {
-    _.each(atem.getPgmPvwState(), (data, type) => {
-      onAtemPgmPvwChange(type, data);
-    });
-  };
-  
-  panel = new MIDIControlPanel(config.midiDevice, { onControllerButtonPress, onFader });
-  atem  = new Atem(config.atemIP, { onPgmPvwChange: onAtemPgmPvwChange });
+  panel = new MIDIControlPanel(config.midiDevice, {
+    onButtonPress: onControllerButtonPress,
+    onFader:       onControllerFader,
+    onReconnect:   onControllerReconnect,
+  });
+  atem = new Atem(config.atemIP, {
+    onPgmPvwChange: onAtemPgmPvwChange,
+    onFTBChange:    onAtemFTBChange,
+  });
   await atem.connect();
   pgmPvwButtons = await atemSoftwareConfig.buttonOrder();
+
   syncState();
-  
-  console.log(pgmPvwButtons);
 };
 
 main();
