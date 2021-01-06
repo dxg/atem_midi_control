@@ -1,3 +1,3 @@
-const config = require('../config.local.js');
+const config = require('../config.local.json');
 
 module.exports = config;

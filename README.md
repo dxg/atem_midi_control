@@ -30,7 +30,7 @@ This app should work on OS X, however it's untested.
 4. Open a command prompt, `cd` into to extracted folder
 5. Type `npm install` and press enter
 6. Double click `Run.sh` to launch or run `node src/index.js`
-7. Copy `config.example.js` to `config.local.js` and adjust values inside `config.local.js` as required.
+7. Copy `config.example.json` to `config.local.json` and adjust values inside `config.local.json` as required.
 
 ## Supported devices
 

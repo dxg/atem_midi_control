@@ -65,7 +65,7 @@ const buttonOrder = async () => {
     throw new Error("ATEMP config not found");
   }
 
-  return buttons.map((b) => inputs[b.externalInputIndex] );
+  return buttons.map((b) => inputs[b.externalInputIndex] ).filter(b => b);
 };
 
 module.exports = {
