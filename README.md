@@ -3,14 +3,15 @@
 ## Why?
 
 An entry level OEM control panel costs upwards of $3000 USD.
-There are however cheapo MIDI based video controllers available for ~$400 USD such as the MIDI based TY-1500HD.
-Someone makes a simple software app that connects it to Blackmagic devices, however I've found it to be unstable & contain limited functionlity.
+There are however cheaper video controllers available for ~$400 USD such as the solidly built TY-1500HD which uses the MIDI protocol. This control panel is intended for use with vMix, however it can be made to work with Blackmagic.
+There is an app called 'BMDSwitcherMIDIMapper' which enables controlling Blackmagic devices with midi ones, however I've found it to be unstable & missing some features.
 
 ## Functionality
 
 Connects control interface buttons & fader to your video switcher.
 
-This app scans reads your configuration from autosave files belonging to the official ATEM control software & maps them to the MIDI device.
+This app reads your configuration from autosave files belonging to the official ATEM control software & maps them to the MIDI device.
+It can be made to work without installing ATEM software, however I've not configured this yet.
 
 ## Getting started
 
@@ -23,6 +24,8 @@ This app should work on OS X, however it's untested.
 3. Double click `Run` batch file to start
 
 ### Advanced install [Windows, OS X, Linux]
+
+*Note that whilst this should work with OS X & Linux, I've not tested it*
 
 1. Install [NodeJS](https://nodejs.org/en/download/) 14 LTS or newer and install build tools when prompted (will take a while & require internet).
 2. Download a copy of `ATEM_MIDI_advanced.zip`
@@ -44,7 +47,8 @@ This app should work on OS X, however it's untested.
 ## FAQ
 
 **Why is it just a black window? Where is the interface?**
-There isn't one. It's a simple console based NodeJS app & configure by editing JSON files.
+There isn't one. The app auto-configures itself based on your ATEM software configuration.
+Further customisation is available by editing JSON files.
 
 **My ATEM uses a different IP address and this app won't connect**
 You can change the ATEM IP in `config.local.js`.
