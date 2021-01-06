@@ -1,8 +1,8 @@
+const bridge = require('./bridge.js')();
 
-
-process.on('SIGINT', () => {
-  panel.close();
-  process.exit();
+process.on('SIGINT', async () => {
+  await bridge.stop();
+  process.exit(0);
 });
 
-//setTimeout((() => panel.close()), 5000);
+bridge.start();

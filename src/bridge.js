@@ -4,7 +4,7 @@ const Atem               = require('./device/atem.js');
 const MIDIControlPanel   = require('./device/midi_control_panel.js');
 const atemSoftwareConfig = require('./utils/atem_software_config.js');
 
-const main = async () => {
+const bridge = () => {
   let atem;
   let panel;
   let pgmPvwButtons;
@@ -66,19 +66,31 @@ const main = async () => {
     }
   };
 
-  panel = new MIDIControlPanel(config.midiDevice, {
-    onButtonPress: onControllerButtonPress,
-    onFader:       onControllerFader,
-    onReconnect:   onControllerReconnect,
-  });
-  atem = new Atem(config.atemIP, {
-    onPgmPvwChange: onAtemPgmPvwChange,
-    onFTBChange:    onAtemFTBChange,
-  });
-  await atem.connect();
-  pgmPvwButtons = await atemSoftwareConfig.buttonOrder();
+  const start = async () => {
+    panel = new MIDIControlPanel(config.midiDevice, {
+      onButtonPress: onControllerButtonPress,
+      onFader:       onControllerFader,
+      onReconnect:   onControllerReconnect,
+    });
+    atem = new Atem(config.atemIP, {
+      onPgmPvwChange: onAtemPgmPvwChange,
+      onFTBChange:    onAtemFTBChange,
+    });
+    await atem.connect();
+    pgmPvwButtons = await atemSoftwareConfig.buttonOrder();
 
-  syncState();
+    syncState();
+  }
+
+  const stop = async () => {
+    await atem.disconnect();
+    panel.disconnect();
+  }
+
+  return {
+    start,
+    stop,
+  };
 };
 
-main();
+module.exports = bridge;

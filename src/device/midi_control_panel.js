@@ -41,7 +41,15 @@ class MIDIControlPanel {
     this.#listen();
   }
 
-  #disconnect() {
+  disconnect() {
+    clearInterval(this.#aliveInterval);
+
+    this.#config.buttons.forEach((btn) => {
+      if (btn.flashInterval) {
+        clearInterval(btn.flashInterval);
+      }
+    });
+
     this.#connected = false;
     this.#stopListening();
     this.#input.closePort();
@@ -69,7 +77,7 @@ class MIDIControlPanel {
     } else {
       if (this.#connected) {
         console.log(chalk.yellow(`Connection to '${this.#config.name}' lost`));
-        this.#disconnect();
+        this.disconnect();
       }
     }
   }

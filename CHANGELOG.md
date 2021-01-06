@@ -1,3 +1,6 @@
+# 0.3.1 (2021-01-06)
+- Add 'npm start' script & add fix src/index.js
+
 # 0.3.0 (2021-01-06)
 - Enable transition cut, FTB & auto buttons
 - Gracefully handle MIDI device disconnect/reconnect
