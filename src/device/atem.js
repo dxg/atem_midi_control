@@ -30,21 +30,25 @@ class Atem {
       console.error(chalk.red(`ATEM error: ${what}`));
     });
     
-    this.#device.on('stateChanged', (state, pathToChange, val) => {
+    this.#device.on('stateChanged', (state, allChanges, val) => {
       const pgm =  _.find(this.#device.state.inputs, (v, k) => v.shortName === 'PGM');
       const pvw =  _.find(this.#device.state.inputs, (v, k) => v.shortName === 'PVW');
-      
-      if (pathToChange[1].indexOf('previewInput') !== -1) {
-        this.#externalCallbacks.onPgmPvwChange('PVW', this.#device.listVisibleInputs('preview'));
-      } else if (pathToChange[1].indexOf('programInput') !== -1) {
-        this.#externalCallbacks.onPgmPvwChange('PGM', this.#device.listVisibleInputs('program'));
-      } else if (pathToChange[1].indexOf('fadeToBlack') !== -1) {
-        this.#externalCallbacks.onFTBChange(this.#device.state.video.mixEffects[0].fadeToBlack);
-      } else if (pathToChange[1].indexOf('transitionPosition') !== -1) {
-        // supress logs
-      } else {
-        console.log("stateChanged", pathToChange);
-      }
+
+      const changes = _.without(allChanges, 'info.lastTime');
+
+      changes.forEach((change) => {
+        if (change.indexOf('previewInput') !== -1) {
+          this.#externalCallbacks.onPgmPvwChange('PVW', this.#device.listVisibleInputs('preview'));
+        } else if (change.indexOf('programInput') !== -1) {
+          this.#externalCallbacks.onPgmPvwChange('PGM', this.#device.listVisibleInputs('program'));
+        } else if (change.indexOf('fadeToBlack') !== -1) {
+          this.#externalCallbacks.onFTBChange(this.#device.state.video.mixEffects[0].fadeToBlack);
+        } else if (change.indexOf('transitionPosition') !== -1) {
+          // supress logs
+        } else {
+          console.log("stateChanged", change);
+        }
+      });
     });
   }
 

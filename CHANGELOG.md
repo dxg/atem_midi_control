@@ -1,3 +1,6 @@
+# 0.3.2 (2021-01-15)
+- Fix preview light not changing after transition
+
 # 0.3.1 (2021-01-06)
 - Add 'npm start' script & add fix src/index.js
 
