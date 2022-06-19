@@ -20,21 +20,23 @@ This app should work on OS X, however it's untested.
 ### Simple install [Windows only]
 
 1. Make sure ATEM control software is installed & working (doesn't need to be running when using this app, just installed)
-2. Download `ATEM_MIDI_win_complete.zip`
+2. Download latest complete windows release
 3. Extract files
-4. Double click `Run` batch file to start
+4. Adjust IP in `atem_midi_control/config.local.json`.
+5. Double click `Run` batch file to start
 
 ### Advanced install [Windows, OS X, Linux]
 
 *Note that whilst this should work with OS X & Linux, I've not tested it*
 
-1. Install [NodeJS](https://nodejs.org/en/download/) 14 LTS or newer and install build tools when prompted (will take a while & require internet).
-2. Download a copy of `ATEM_MIDI_advanced.zip`
+1. Install [NodeJS](https://nodejs.org/en/download/) 14 LTS or newer and any required build tools (`apt-get install build-essential` or equivalent).
+2. Download the latest release
 3. Extract files
 4. Open a command prompt, `cd` into to extracted folder
 5. Type `npm install` and press enter
-6. Double click `Run.sh` to launch or run `node src/index.js`
-7. Copy `config.example.json` to `config.local.json` and adjust values inside `config.local.json` as required.
+6. Adjust IP in `config.local.json`.
+7. Start with `npm start`
+8. Copy `config.example.json` to `config.local.json` and adjust values inside `config.local.json` as required.
 
 ## Supported devices
 
@@ -56,3 +58,4 @@ You can change the ATEM IP in `config.local.js`.
 
 **Does it support other MIDI devices?**
 Not currently, but have a look inside `src/devices/config` to see how it works and how to add support for other devices.
+
