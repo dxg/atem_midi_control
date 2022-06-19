@@ -19,9 +19,10 @@ This app should work on OS X, however it's untested.
 
 ### Simple install [Windows only]
 
-1. Download `ATEM_MIDI_win_complete.zip`
-2. Extract files
-3. Double click `Run` batch file to start
+1. Make sure ATEM control software is installed & working (doesn't need to be running when using this app, just installed)
+2. Download `ATEM_MIDI_win_complete.zip`
+3. Extract files
+4. Double click `Run` batch file to start
 
 ### Advanced install [Windows, OS X, Linux]
 

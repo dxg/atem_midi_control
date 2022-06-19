@@ -1,20 +1,23 @@
 {
   "name": "atem_midi_control",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Control Blacmagic ATEM switcher with cheap MIDI controllers",
   "main": "src/index.js",
+  "engines": {
+    "node": ">= 14.0.0"
+  },
   "scripts": {
     "start": "node src/index.js"
   },
   "dependencies": {
     "atem-connection": "^2.1.0",
     "chalk": "^4.1.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "midi": "^1.0.0",
     "xml2json": "^0.12.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.6"
+    "nodemon": "^2.0.16"
   },
   "keywords": [
     "atem",

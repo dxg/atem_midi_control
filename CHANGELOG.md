@@ -1,3 +1,8 @@
+# 0.4.0 (2022-06-19)
+- Update packages to fix security vulns
+- Remove default config - should be created by user
+- Specify Node version >= 14. It was already expected but not specified.
+
 # 0.3.2 (2021-01-15)
 - Fix preview light not changing after transition
 
